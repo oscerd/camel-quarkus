@@ -19,6 +19,7 @@ package org.apache.camel.quarkus.component.crypto.it;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 
 import javax.crypto.KeyGenerator;
 
@@ -62,8 +63,13 @@ public class CryptoRoutes extends RouteBuilder {
     }
 
     private CryptoDataFormat getCryptoDataFormat() throws NoSuchAlgorithmException {
-        KeyGenerator generator = KeyGenerator.getInstance("DES");
-        CryptoDataFormat cdf = new CryptoDataFormat("DES", generator.generateKey());
+        KeyGenerator generator = KeyGenerator.getInstance("AES");
+        generator.init(256);
+        CryptoDataFormat cdf = new CryptoDataFormat("AES/CBC/PKCS5Padding", generator.generateKey());
+        // Random initialization vector shared by the marshal/unmarshal routes (same data format instance)
+        byte[] initializationVector = new byte[16];
+        new SecureRandom().nextBytes(initializationVector);
+        cdf.setInitVector(initializationVector);
         //workaround for SunPKCS11-NSS-FIPS
         cdf.setShouldAppendHMAC(false);
         return cdf;
